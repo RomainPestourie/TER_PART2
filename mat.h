@@ -30,9 +30,9 @@ private:
   Eigen::VectorXd _y;
   Eigen::VectorXd _f;
   Eigen::VectorXd _Sol;
-  Eigen::MatrixXd _L1 , _L2 , _L3 , _L4;
+  Eigen::MatrixXd _L1 , _L2 , _L3 , _L4, , _R;
   Eigen::MatrixXd _T , _A, _AStar , _Lambda , _RhoStar , _Xi , _XiStar;
-  Eigen::MatrixXd _P1 , _P2 , _P3 , _P4 , _R;
+  Eigen::SparseMatrix<double> _P, _P1 , _P4 ;
   Eigen::VectorXd _AVec , _LambdaVec , _RhoVec , _XiVec ;
   Eigen::VectorXd _FS , _FN , _FE , _FO;
 
