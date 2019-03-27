@@ -32,10 +32,11 @@ private:
   Eigen::MatrixXd _L1 , _L2 , _L3 , _L4 , _R;
   Eigen::MatrixXd _Rho , _A, _AStar , _Lambda , _RhoStar , _Xi , _XiStar;
   Eigen::VectorXd _Tvec ;
-  Eigen::VectorXd _FS , _FN , _FE , _FO;
+  Eigen::VectorXd _FS , _FN , _FE , _FO, _Sm;
 
 public:
 Matrices(const double x_min, const double x_max, const double y_min, const double y_max,const int Nx, const int Ny);
+
 
 void Rho(double t);
 void Xi();
@@ -44,10 +45,17 @@ void A();
 void M();
 void L1234();
 void R();
+void Newton();
+void Sm();
 Eigen::VectorXd GetT() {return _T;};
 Eigen::SparseMatrix<double> GetM() {return _M;};
 Eigen::MatrixXd GetRho() {return _Rho;};
 Eigen::MatrixXd GetA() {return _A;};
+Eigen::MatrixXd GetR() {return _R;};
 Eigen::MatrixXd GetXi() {return _Xi;};
 Eigen::MatrixXd GetLambda() {return _Lambda;};
+Eigen::MatrixXd GetL1() {return _L1;};
+Eigen::MatrixXd GetL2() {return _L2;};
+Eigen::MatrixXd GetL3() {return _L3;};
+Eigen::MatrixXd GetL4() {return _L4;};
 };
