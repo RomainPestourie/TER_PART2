@@ -22,9 +22,12 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   // Paramètres
   _Ar = 1;
   _M.resize(_Nl*_Nc,_Nl*_Nc);
-  _Lm = 10;
+  _Lm = 100;
+  _hy = (_y_max - _y_min) / _Nc;
+  _hx = (_x_max - _x_min) / _Nl;
   _RhoV = 1500;
   _RhoP = 2;
+  _Sm.resize(_Nl*_Nc);
   _Rho.resize(_Nl,_Nc);
   _RhoStar.resize(_Nl,_Nc);
   _Xi.resize(_Nl,_Nc);
@@ -35,6 +38,7 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   _T.resize(_Nl,_Nc);
   _Tvec.resize(_Nl*_Nc);
   _Sol.resize(_Nl*_Nc);
+  _R.resize(_Nl,_Nc);
   _LambV = 3;
   _LambP = 4;
   _Cpp = 1000;
@@ -63,6 +67,7 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
       _A.coeffRef(i,j) = _Cpv;
       _AStar.coeffRef(i,j) = _Cpv;
       _Tvec.coeffRef(j+i*_Nc) = _T.coeffRef(i,j);
+      _L1(i,j)=1 ; _L2(i,j) = 2 ; _L3(i,j) = 3 ; _L4(i,j) = 4;
     }
   }
 }
@@ -116,7 +121,7 @@ void Matrices::A()
 
 void Matrices::L1234()
 {
-  _L1.setZero();_L2.setZero();_L3.setZero();_L4.setZero();
+  //_L1.setZero();_L2.setZero();_L3.setZero();_L4.setZero();
   for (int i=0; i<_Nl; i++)
   {
     for (int j=1 ; j<_Nc; j++)
@@ -141,7 +146,14 @@ void Matrices::R()
   {
     for (int j=0; j<_Nc; j++)
     {
-      _R(i,j) = _AStar(i,j) / _A(i,j);
+      if (_A(i,j)!=0)
+      {
+        _R(i,j) = _AStar(i,j) / _A(i,j);
+      }
+      else
+      {
+        cout << "erreur" << endl;
+      }
     }
   }
 }
@@ -155,22 +167,50 @@ void Matrices::M()
     for (int j=0 ; j<_Nc;j++)
     {
       triplets.push_back({i*_Nc+j,i*_Nc+j,_R(i,j)-(_L1(i,j)+_L2(i,j)+_L3(i,j)+_L4(i,j))});
-      if (i*_Nc+j>1)
+      if (i*_Nc+j>0)
       {
-        triplets.push_back({i*_Nc+j-1,i*_Nc+j,_L1(i,j)});
+        triplets.push_back({i*_Nc+j-1,i*_Nc+j,_L2(i,j)});
       }
-      else if(i*_Nc+j+1<(_Nl-1)*(_Nc-1))
+      if(i*_Nc+j+1<(_Nl)*(_Nc))
       {
-        triplets.push_back({i*_Nc+j+1,i*_Nc+j,_L2(i,j)});
+        triplets.push_back({i*_Nc+j+1,i*_Nc+j,_L1(i,j)});
       }
-      else if ((i+1)*_Nc+j<(_Nl-1)*(_Nc-1))
+      if ((i+1)*_Nc+j<(_Nl)*(_Nc))
       {
-        triplets.push_back({i*_Nc+j,i*_Nc+j+_Nc,_L3(i,j)});
+        triplets.push_back({i*_Nc+j,i*_Nc+j+_Nc,_L4(i,j)});
       }
-      else if ((i-1)*_Nc+j>0)
+      if ((i-1)*_Nc+j+1>0)
       {
-        triplets.push_back({i*_Nc+j,i*_Nc+j-_Nc,_L4(i,j)});
+        triplets.push_back({i*_Nc+j,i*_Nc+j-_Nc,_L3(i,j)});
       }
     }
   }
+  _M.setFromTriplets(triplets.begin(),triplets.end());
+}
+
+void Matrices::Sm()
+{
+  for (int i=0; i<_Nl; i++)
+  {
+    for (int j=0; j<_Nc; j++)
+    {
+      _Sm(i*_Nc+j) = _T0 * (1-_R(i,j)) + _Lm/ _A(i,j)* (_Rho(i,j)-_RhoStar(i,j));
+    }
+  }
+}
+
+void Matrices::Newton()
+{
+  VectorXd sol1;
+  BiCGSTAB <SparseMatrix<double>> solver;
+
+
+  solver.compute(_M);
+  sol1 = solver.solve(_Sol + _f + _Sm);
+  cout << "itérations = " << solver.iterations() << endl;
+  cout << "erreur estimée = " << solver.error() << endl;
+  _Sol = sol1;
+
+  _t = _t + _dt;
+  cout << "t= " <<_t << endl;
 }
