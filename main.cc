@@ -16,7 +16,7 @@ using namespace Eigen;
 using namespace std;
 
 int main() {
-  // Je fais un test
+  // Message
   double x_min, x_max, y_min, y_max, t , tf , dt, test;
   int Nx,Ny,n;
   test = 10;
