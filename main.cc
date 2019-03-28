@@ -41,11 +41,11 @@ int main() {
   cout << "Rho ok" << endl;
   sys -> Xi();
   cout << "Xi ok" << endl;
-  //sys -> Lambda();
+  sys -> Lambda();
   cout << "Lambda ok" << endl;
-  //sys -> A();
+  sys -> A();
   cout << "A ok" << endl;
-  //sys -> L1234();
+  sys -> L1234();
   cout << "L1234 ok" << endl;
   sys -> R();
   cout << "R ok" << endl;

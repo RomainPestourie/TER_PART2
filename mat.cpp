@@ -39,19 +39,20 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   _Tvec.resize(_Nl*_Nc);
   _Sol.resize(_Nl*_Nc);
   _R.resize(_Nl,_Nc);
-  _LambV = 3;
-  _LambP = 4;
-  _Cpp = 1000;
-  _Cpv = 6;
+  _LambV = 1;
+  _LambP = 2;
+  _Cpp = 1500;
+  _Cpv = 1000;
   _T0 = 293;
   _TA = 500;
-  _dt = 20 ;
+  _dt = 0.1 ;
   _t = 0;
   _T.setZero();
   _Sol.setZero();
   _Rho.setZero();
   _Lambda.setZero();
   _L1.resize(_Nl,_Nc); _L2.resize(_Nl,_Nc); _L3.resize(_Nl,_Nc); _L4.resize(_Nl,_Nc);
+  _FS.resize(_Nl); _FN.resize(_Nl); _FO.resize(_Nc); _FE.resize(_Nc);
   //_P1.resize(_Nc,_Nc); _P2.resize(_Nc,_Nc); _P3.resize(_Nc,_Nc); _P4.resize(_Nc,_Nc);
 
   for (int i=0 ; i<_Nl; i++)
@@ -72,6 +73,11 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   }
 }
 
+void Flux()
+{
+  _FS.setZero(); _FN.setZero(); _FO.setZero(); _FE.setZero();
+}
+
 void Matrices::Rho(double t)
 {
   double C;
@@ -86,6 +92,20 @@ void Matrices::Rho(double t)
   }
 }
 
+void Matrices::RhoStar(double t)
+{
+  double C;
+  for (int i=0; i<_Nl; i++)
+  {
+    for (int j=0; j<_Nc ; j++)
+    {
+      C = _RhoV * _Ar * exp(-_TA/_T.coeffRef(i,j)) / (_RhoV-_RhoP);
+      _RhoStar.coeffRef(i,j) = (_RhoV-_RhoP) * exp(-C*(t+_dt)) + _RhoP;
+
+    }
+  }
+}
+
 void Matrices::Xi()
 {
   for (int i=0; i<_Nl; i++)
@@ -93,6 +113,17 @@ void Matrices::Xi()
     for (int j=0 ; j<_Nc; j++)
     {
       _Xi.coeffRef(i,j) = (_RhoV - _Rho.coeffRef(i,j)) / (_RhoV-_RhoP);
+    }
+  }
+}
+
+void Matrices::XiStar()
+{
+  for (int i=0; i<_Nl; i++)
+  {
+    for (int j=0 ; j<_Nc; j++)
+    {
+      _XiStar.coeffRef(i,j) = (_RhoV - _RhoStar.coeffRef(i,j)) / (_RhoV-_RhoP);
     }
   }
 }
@@ -115,6 +146,16 @@ void Matrices::A()
     for (int j=0 ; j<_Nc ; j++)
     {
       _A.coeffRef(i,j) = (1 - _Xi(i,j)) * _Cpv * _RhoV + _Xi(i,j) * _Cpp * _RhoP;
+    }
+  }
+}
+void Matrices::Astar()
+{
+  for (int i=0 ; i<_Nl; i++)
+  {
+    for (int j=0 ; j<_Nc ; j++)
+    {
+      _AStar.coeffRef(i,j) = (1 - _XiStar(i,j)) * _Cpv * _RhoV + _XiStar(i,j) * _Cpp * _RhoP;
     }
   }
 }
@@ -199,10 +240,13 @@ void Matrices::Sm()
   }
 }
 
-void Matrices::Newton()
+void Matrices::Newton(double t)
 {
   VectorXd sol1;
   BiCGSTAB <SparseMatrix<double>> solver;
+  Rho(t); RhoStar(t); Xi(); XiStar(); Lambda(); A(); AStar();
+  L1234(); R(); Sm(); M(); Flux();
+
 
 
   solver.compute(_M);
@@ -213,4 +257,30 @@ void Matrices::Newton()
 
   _t = _t + _dt;
   cout << "t= " <<_t << endl;
+}
+
+void Matrices::SaveSolPara(string nf)
+{
+  ofstream solution;
+  solution.open(nf, ios::out);
+  solution.precision(7);
+  solution << "# vtk DataFile Version 3.0" << endl;
+  solution << "sol" << endl;
+  solution << "ASCII" << endl;
+  solution << "DATASET STRUCTURED_POINTS" << endl;
+  solution << "DIMENSIONS " << _Nx << " " << _Ny << " " << 1 << endl;
+  solution << "ORIGIN " << _x_min << " " << _y_min << " " << 0 << endl;
+  solution << "SPACING " << _h_x << " " << _h_y << " " << 1 << endl;;
+  solution << "POINT_DATA " << _Nx*_Ny << endl;
+  solution << "SCALARS sol float" << endl;
+  solution << "LOOKUP_TABLE default" << endl;
+  for(int i=0; j<_Nl; ++j)
+  {
+    for(int j=0; j<_Nc; ++i)
+    {
+      solution << float(_sol(i*_Nc+j)) << " ";
+    }
+    solution << endl;
+  }
+  solution.close();
 }

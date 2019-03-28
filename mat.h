@@ -37,16 +37,20 @@ private:
 public:
 Matrices(const double x_min, const double x_max, const double y_min, const double y_max,const int Nx, const int Ny);
 
-
+void Flux();
 void Rho(double t);
+void RhoStar(double t);
 void Xi();
+void XiStar();
 void Lambda();
 void A();
+void AStar();
 void M();
 void L1234();
 void R();
 void Newton();
 void Sm();
+void SaveSolPara(std::string nf);
 Eigen::VectorXd GetT() {return _T;};
 Eigen::SparseMatrix<double> GetM() {return _M;};
 Eigen::MatrixXd GetRho() {return _Rho;};
