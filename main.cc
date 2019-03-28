@@ -27,7 +27,7 @@ int main() {
   Nx = 5;
   Ny = 6;
   t = 0.;
-  tf = 100;
+  tf = 1;
   dt = pow(10,-1);
 
   n= (tf-t)/dt;
@@ -74,6 +74,20 @@ int main() {
 
   cout << "M" <<endl;
   cout << sys->GetM() << endl;
+
+  for (int t = 0; t <= tf; t++) //faire condition while sur dt ensuite
+{
+cout << "Rho*" << endl;
+sys->RhoStar(t);
+cout << "Newton" <<endl;
+sys->Newton();
+cout << "Rho" <<endl;
+sys->Rho(t);
+
+
+
+}
+
 
   return 0;
 }

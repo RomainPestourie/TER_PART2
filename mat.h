@@ -28,10 +28,10 @@ private:
   Eigen::VectorXd _x;
   Eigen::VectorXd _y;
   Eigen::VectorXd _f;
-  Eigen::VectorXd _Sol;
+  Eigen::VectorXd _Tvect;
   Eigen::MatrixXd _L1 , _L2 , _L3 , _L4 , _R;
   Eigen::MatrixXd _Rho , _A, _AStar , _Lambda , _RhoStar , _Xi , _XiStar;
-  Eigen::VectorXd _Tvec ;
+
   Eigen::VectorXd _FS , _FN , _FE , _FO, _Sm;
 
 public:

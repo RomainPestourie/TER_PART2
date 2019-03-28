@@ -36,8 +36,8 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   _A.resize(_Nl,_Nc);
   _AStar.resize(_Nl,_Nc);
   _T.resize(_Nl,_Nc);
-  _Tvec.resize(_Nl*_Nc);
-  _Sol.resize(_Nl*_Nc);
+
+  _Tvect.resize(_Nl*_Nc);
   _R.resize(_Nl,_Nc);
   _LambV = 1;
   _LambP = 2;
@@ -48,7 +48,7 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   _dt = 0.1 ;
   _t = 0;
   _T.setZero();
-  _Sol.setZero();
+  _Tvect.setZero();
   _Rho.setZero();
   _Lambda.setZero();
   _L1.resize(_Nl,_Nc); _L2.resize(_Nl,_Nc); _L3.resize(_Nl,_Nc); _L4.resize(_Nl,_Nc);
@@ -62,18 +62,18 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
     {
       cout << "j = " << j << endl;
       _T.coeffRef(i,j) = _T0;
-      _Sol.coeffRef(j+_Nc*i) = _T.coeffRef(i,j);
+      _Tvect.coeffRef(j+_Nc*i) = _T.coeffRef(i,j);
       _Rho.coeffRef(i,j) = _RhoV;
       _Lambda.coeffRef(i,j) = 1;
       _A.coeffRef(i,j) = _Cpv;
       _AStar.coeffRef(i,j) = _Cpv;
-      _Tvec.coeffRef(j+i*_Nc) = _T.coeffRef(i,j);
+
       _L1(i,j)=1 ; _L2(i,j) = 2 ; _L3(i,j) = 3 ; _L4(i,j) = 4;
     }
   }
 }
 
-void Flux()
+void Matrices::Flux()
 {
   _FS.setZero(); _FN.setZero(); _FO.setZero(); _FE.setZero();
 }
@@ -81,11 +81,14 @@ void Flux()
 void Matrices::Rho(double t)
 {
   double C;
+
+
   for (int i=0; i<_Nl; i++)
   {
     for (int j=0; j<_Nc ; j++)
     {
-      C = _RhoV * _Ar * exp(-_TA/_T.coeffRef(i,j)) / (_RhoV-_RhoP);
+
+      C = _RhoV * _Ar * exp(-_TA/_Tvect.coeffRef(i*_Nc+j)) / (_RhoV-_RhoP);
       _Rho.coeffRef(i,j) = (_RhoV-_RhoP) * exp(-C*t) + _RhoP;
 
     }
@@ -94,13 +97,13 @@ void Matrices::Rho(double t)
 
 void Matrices::RhoStar(double t)
 {
-  double C;
+ double C;
   for (int i=0; i<_Nl; i++)
   {
     for (int j=0; j<_Nc ; j++)
     {
-      C = _RhoV * _Ar * exp(-_TA/_T.coeffRef(i,j)) / (_RhoV-_RhoP);
-      _RhoStar.coeffRef(i,j) = (_RhoV-_RhoP) * exp(-C*(t+_dt)) + _RhoP;
+      C = _RhoV * _Ar * exp(-_TA/_Tvect.coeffRef(i,j)) / (_RhoV-_RhoP);
+      _RhoStar.coeffRef(i,j) = (_RhoV-_RhoP) * exp(-C*(t)) + _RhoP;
 
     }
   }
@@ -149,7 +152,7 @@ void Matrices::A()
     }
   }
 }
-void Matrices::Astar()
+void Matrices::AStar()
 {
   for (int i=0 ; i<_Nl; i++)
   {
@@ -240,23 +243,36 @@ void Matrices::Sm()
   }
 }
 
-void Matrices::Newton(double t)
+void Matrices::Newton()
 {
   VectorXd sol1;
+  double dT;
+  cout << "début BiCGSTAB" << endl;
   BiCGSTAB <SparseMatrix<double>> solver;
-  Rho(t); RhoStar(t); Xi(); XiStar(); Lambda(); A(); AStar();
-  L1234(); R(); Sm(); M(); Flux();
+
+  cout<< "Mise à jour données" << endl;
+ XiStar(); Xi(); AStar(); A();
+ Lambda(); L1234(); R(); Sm(); M(); Flux();
 
 
+//mettre un while
 
+cout << "RESOLUTION" <<endl;
   solver.compute(_M);
-  sol1 = solver.solve(_Sol + _f + _Sm);
+  cout << "compute ok" << endl;
+while(dT>pow(10,-8))
+{
+  sol1 = solver.solve(_Tvect  + _Sm);
   cout << "itérations = " << solver.iterations() << endl;
   cout << "erreur estimée = " << solver.error() << endl;
-  _Sol = sol1;
 
-  _t = _t + _dt;
-  cout << "t= " <<_t << endl;
+
+  dT=(_Tvect-sol1).norm();
+  _Tvect = sol1;
+}
+
+
+
 }
 
 void Matrices::SaveSolPara(string nf)
@@ -268,17 +284,17 @@ void Matrices::SaveSolPara(string nf)
   solution << "sol" << endl;
   solution << "ASCII" << endl;
   solution << "DATASET STRUCTURED_POINTS" << endl;
-  solution << "DIMENSIONS " << _Nx << " " << _Ny << " " << 1 << endl;
+  solution << "DIMENSIONS " << _Nl << " " << _Nc << " " << 1 << endl;
   solution << "ORIGIN " << _x_min << " " << _y_min << " " << 0 << endl;
-  solution << "SPACING " << _h_x << " " << _h_y << " " << 1 << endl;;
-  solution << "POINT_DATA " << _Nx*_Ny << endl;
+  solution << "SPACING " << _hx << " " << _hy << " " << 1 << endl;;
+  solution << "POINT_DATA " << _Nc*_Nl << endl;
   solution << "SCALARS sol float" << endl;
   solution << "LOOKUP_TABLE default" << endl;
-  for(int i=0; j<_Nl; ++j)
+  for(int i=0; i<_Nl; i++)
   {
-    for(int j=0; j<_Nc; ++i)
+    for(int j=0; j<_Nc; j++)
     {
-      solution << float(_sol(i*_Nc+j)) << " ";
+      solution << float(_Tvect(i*_Nc+j)) << " ";
     }
     solution << endl;
   }
