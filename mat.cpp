@@ -20,13 +20,13 @@ Matrices::Matrices( const double x_min, const double x_max, const double y_min, 
 _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
 {
   // Paramètres
-  _Ar = 1;
+  _Ar = 1000;
   _M.resize(_Nl*_Nc,_Nl*_Nc);
-  _Lm = 100;
+  _Lm = 300000;
   _hy = (_y_max - _y_min) / _Nc;
   _hx = (_x_max - _x_min) / _Nl;
   _RhoV = 1500;
-  _RhoP = 2;
+  _RhoP = 1000;
   _Sm.resize(_Nl*_Nc);
   _Rho.resize(_Nl,_Nc);
   _RhoStar.resize(_Nl,_Nc);
@@ -40,12 +40,12 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   _Tvect.resize(_Nl*_Nc);
   _R.resize(_Nl,_Nc);
   _LambV = 1;
-  _LambP = 2;
+  _LambP = 1;
   _Cpp = 1500;
   _Cpv = 1000;
   _T0 = 293;
-  _TA = 500;
-  _dt = 0.1 ;
+  _TA = 6000;
+  _dt = 0.5 ;
   _t = 0;
   _T.setZero();
   _Tvect.setZero();
@@ -57,18 +57,15 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
 
   for (int i=0 ; i<_Nl; i++)
   {
-    cout << "i = " << i << endl;
+    //cout << "i = " << i << endl;
     for (int j=0 ; j<_Nc ; j++)
     {
-      cout << "j = " << j << endl;
       _T.coeffRef(i,j) = _T0;
       _Tvect.coeffRef(j+_Nc*i) = _T.coeffRef(i,j);
       _Rho.coeffRef(i,j) = _RhoV;
       _Lambda.coeffRef(i,j) = 1;
       _A.coeffRef(i,j) = _Cpv;
       _AStar.coeffRef(i,j) = _Cpv;
-
-      _L1(i,j)=1 ; _L2(i,j) = 2 ; _L3(i,j) = 3 ; _L4(i,j) = 4;
     }
   }
 }
@@ -102,7 +99,7 @@ void Matrices::RhoStar(double t)
   {
     for (int j=0; j<_Nc ; j++)
     {
-      C = _RhoV * _Ar * exp(-_TA/_Tvect.coeffRef(i,j)) / (_RhoV-_RhoP);
+      C = _RhoV * _Ar * exp(-_TA/_Tvect.coeffRef(i*_Nc+j)) / (_RhoV-_RhoP);
       _RhoStar.coeffRef(i,j) = (_RhoV-_RhoP) * exp(-C*(t)) + _RhoP;
 
     }
@@ -148,7 +145,7 @@ void Matrices::A()
   {
     for (int j=0 ; j<_Nc ; j++)
     {
-      _A.coeffRef(i,j) = (1 - _Xi(i,j)) * _Cpv * _RhoV + _Xi(i,j) * _Cpp * _RhoP;
+      _A.coeffRef(i,j) = (1 - _Xi.coeffRef(i,j)) * _Cpv * _RhoV + _Xi.coeffRef(i,j) * _Cpp * _RhoP;
     }
   }
 }
@@ -158,14 +155,14 @@ void Matrices::AStar()
   {
     for (int j=0 ; j<_Nc ; j++)
     {
-      _AStar.coeffRef(i,j) = (1 - _XiStar(i,j)) * _Cpv * _RhoV + _XiStar(i,j) * _Cpp * _RhoP;
+      _AStar.coeffRef(i,j) = (1 - _XiStar.coeffRef(i,j)) * _Cpv * _RhoV + _XiStar.coeffRef(i,j) * _Cpp * _RhoP;
     }
   }
 }
 
 void Matrices::L1234()
 {
-  //_L1.setZero();_L2.setZero();_L3.setZero();_L4.setZero();
+  _L1.setZero();_L2.setZero();_L3.setZero();_L4.setZero();
   for (int i=0; i<_Nl; i++)
   {
     for (int j=1 ; j<_Nc; j++)
@@ -196,7 +193,7 @@ void Matrices::R()
       }
       else
       {
-        cout << "erreur" << endl;
+        cout << "erreur dans R, A=0" << endl;
       }
     }
   }
@@ -211,24 +208,24 @@ void Matrices::M()
     for (int j=0 ; j<_Nc;j++)
     {
       triplets.push_back({i*_Nc+j,i*_Nc+j,_R(i,j)-(_L1(i,j)+_L2(i,j)+_L3(i,j)+_L4(i,j))});
-      if (i*_Nc+j>0)
+    if(j<_Nl-1)
       {
-        triplets.push_back({i*_Nc+j-1,i*_Nc+j,_L2(i,j)});
+        triplets.push_back({i*_Nc+j,i*_Nc+j+1,_L2(i,j)});
       }
-      if(i*_Nc+j+1<(_Nl)*(_Nc))
+    if(i<_Nl-1)
       {
-        triplets.push_back({i*_Nc+j+1,i*_Nc+j,_L1(i,j)});
+        triplets.push_back({i*_Nc+j,(i+1)*_Nc+j,_L4(i,j)});
       }
-      if ((i+1)*_Nc+j<(_Nl)*(_Nc))
+     if (j>0)
       {
-        triplets.push_back({i*_Nc+j,i*_Nc+j+_Nc,_L4(i,j)});
+        triplets.push_back({i*_Nc+j,i*_Nc+j-1,_L1(i,j)});
       }
-      if ((i-1)*_Nc+j+1>0)
+     if (i>0)
       {
         triplets.push_back({i*_Nc+j,i*_Nc+j-_Nc,_L3(i,j)});
       }
     }
-  }
+}
   _M.setFromTriplets(triplets.begin(),triplets.end());
 }
 
@@ -238,38 +235,37 @@ void Matrices::Sm()
   {
     for (int j=0; j<_Nc; j++)
     {
-      _Sm(i*_Nc+j) = _T0 * (1-_R(i,j)) + _Lm/ _A(i,j)* (_Rho(i,j)-_RhoStar(i,j));
+      _Sm(i*_Nc+j) = _T0 * (1-_R(i,j)) + (_Lm/_A(i,j))* (_Rho(i,j)-_RhoStar(i,j));
     }
   }
 }
 
-void Matrices::Newton()
+void Matrices::iteration()
 {
   VectorXd sol1;
-  double dT;
-  cout << "début BiCGSTAB" << endl;
+  VectorXd zero;
+  zero.resize(_Tvect.size());
+  for (int i=0 ;  i<_Tvect.size(); i++)
+  {
+    zero(i)=0.;
+  }
+  //cout << "début BiCGSTAB" << endl;
   BiCGSTAB <SparseMatrix<double>> solver;
 
-  cout<< "Mise à jour données" << endl;
- XiStar(); Xi(); AStar(); A();
- Lambda(); L1234(); R(); Sm(); M(); Flux();
+  //cout<< "Mise à jour données" << endl;
+ //XiStar(); Xi(); AStar(); A();
+ //Lambda(); L1234(); R(); Sm(); M(); Flux();
+
+//cout << "Sm" <<_Sm.norm() << endl;
+solver.compute(_M);
+//cout << "compute ok" << endl;
+
+  sol1= solver.solve(_Tvect);
+  //cout << "itérations = " << solver.iterations() << endl;
+  //cout << "erreur estimée = " << solver.error() << endl;
 
 
-//mettre un while
-
-cout << "RESOLUTION" <<endl;
-  solver.compute(_M);
-  cout << "compute ok" << endl;
-while(dT>pow(10,-8))
-{
-  sol1 = solver.solve(_Tvect  + _Sm);
-  cout << "itérations = " << solver.iterations() << endl;
-  cout << "erreur estimée = " << solver.error() << endl;
-
-
-  dT=(_Tvect-sol1).norm();
-  _Tvect = sol1;
-}
+_Tvect+=sol1;
 
 
 

@@ -22,13 +22,13 @@ int main() {
   test = 10;
   x_min = -0.0025;
   x_max = 0.0025;
-  y_min = -0.005;
-  y_max = 0.005;
+  y_min = 0;
+  y_max = 0.01;
   Nx = 5;
   Ny = 6;
   t = 0.;
-  tf = 1;
-  dt = pow(10,-1);
+  tf = 10;
+  dt = 5*pow(10,-2);
 
   n= (tf-t)/dt;
 
@@ -37,13 +37,13 @@ int main() {
   cout << 1 << endl;
   sys = new Matrices(x_min,x_max,y_min,y_max,Nx,Ny);
   cout << "1" << endl;
-  sys -> Rho(0);
+  //sys -> Rho(0);
   cout << "Rho ok" << endl;
   sys -> Xi();
   cout << "Xi ok" << endl;
-  sys -> Lambda();
+  //sys -> Lambda();
   cout << "Lambda ok" << endl;
-  sys -> A();
+  //sys -> A();
   cout << "A ok" << endl;
   sys -> L1234();
   cout << "L1234 ok" << endl;
@@ -75,16 +75,18 @@ int main() {
   cout << "M" <<endl;
   cout << sys->GetM() << endl;
 
-  for (int t = 0; t <= tf; t++) //faire condition while sur dt ensuite
+
+  while(t<tf) //faire condition while sur dt ensuite
 {
-cout << "Rho*" << endl;
-sys->RhoStar(t);
-cout << "Newton" <<endl;
-sys->Newton();
-cout << "Rho" <<endl;
-sys->Rho(t);
+//cout << "t="<<t << endl;
+//sys->RhoStar(t);
+//cout << "Newton" <<endl;
+sys->iteration();
+sys->SaveSolPara("Solution");
 
-
+//cout << "Rho" <<endl;
+//sys->Rho(t);
+t+=dt;
 
 }
 

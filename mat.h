@@ -48,7 +48,7 @@ void AStar();
 void M();
 void L1234();
 void R();
-void Newton();
+void iteration();
 void Sm();
 void SaveSolPara(std::string nf);
 Eigen::VectorXd GetT() {return _T;};
