@@ -37,7 +37,7 @@ private:
 public:
 Matrices(const double x_min, const double x_max, const double y_min, const double y_max,const int Nx, const int Ny);
 
-void Flux();
+void Flux(double t);
 void Rho(double t);
 void RhoStar(double t);
 void Xi();

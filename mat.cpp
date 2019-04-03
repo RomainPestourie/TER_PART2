@@ -71,20 +71,20 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   }
 }
 
-void Matrices::Flux()
+void Matrices::Flux(double t)
 {
   _FS.setZero(); _FN.setZero(); _FO.setZero(); _FE.setZero(); _f.setZero();
 
   for (int i=0; i<_FS.size(); i++)
   {
     _FS(i) = 0;
-    if (_t<=50)
+    if (t<=50)
     {
-      _FN(i) = 10000*_t;
+      _FN(i) = 10000*t;
     }
     else
     {
-      _FN(i) = 500000 - 9000 * (_t-50);
+      _FN(i) = 500000 - 9000 * (t-50);
     }
   }
 
@@ -94,14 +94,14 @@ void Matrices::Flux()
     _FE(i) = 0;
   }
 
-  for (int j=0; j<_Nc-1; j++)
+  for (int j=0; j<_Nc; j++)
   {
     //cout << i <<endl;
     _f(j) += _dt / ( _A(1,j)* _hx) * _FS(j);
-    _f(_Nl*_Nc - 1 -j) += _dt / (_A(_Nl-1,j) * _hx) * _FN(_Nl - 1 - j);
+    _f(_Nl*_Nc - 1 -j) += _dt / (_A(_Nl-1,j) * _hx) * _FN(_Nc - 1 - j);
   }
 
-  for (int i=0; i<_Nl-1; i++)
+  for (int i=0; i<_Nl; i++)
   {
     _f(i*_Nc) +=_dt / (_A(i,1)*_hy) * _FO(i);
     _f((i+1)*_Nc -1) += _dt / (_A(i,_Nc-1)*_hy) * _FE(i);
@@ -241,22 +241,22 @@ void Matrices::M()
   {
     for (int j=0 ; j<_Nc;j++)
     {
-      triplets.push_back({i*_Nc+j,i*_Nc+j,_R(i,j)-(_L1(i,j)+_L2(i,j)+_L3(i,j)+_L4(i,j))});
+      triplets.push_back({i*_Nc+j,i*_Nc+j,_R(i,j)+(_L1(i,j)+_L2(i,j)+_L3(i,j)+_L4(i,j))});
       if(j+_Nc*i<_Nl*_Nc-1)
       {
-        triplets.push_back({i*_Nc+j,i*_Nc+j+1,_L2(i,j)});
+        triplets.push_back({i*_Nc+j,i*_Nc+j+1,-_L2(i,j)});
       }
       if(i<_Nl-1)
       {
-        triplets.push_back({i*_Nc+j,(i+1)*_Nc+j,_L4(i,j)});
+        triplets.push_back({i*_Nc+j,(i+1)*_Nc+j,-_L4(i,j)});
       }
       if (j+_Nc*i>0)
       {
-        triplets.push_back({i*_Nc+j,i*_Nc+j-1,_L1(i,j)});
+        triplets.push_back({i*_Nc+j,i*_Nc+j-1,-_L1(i,j)});
       }
       if (i>0)
       {
-        triplets.push_back({i*_Nc+j,i*_Nc+j-_Nc,_L3(i,j)});
+        triplets.push_back({i*_Nc+j,i*_Nc+j-_Nc,-_L3(i,j)});
       }
     }
   }
@@ -287,14 +287,14 @@ void Matrices::iteration()
   BiCGSTAB <SparseMatrix<double>> solver;
 
   //cout<< "Mise à jour données" << endl;
-  //XiStar(); Xi(); AStar(); A();
-  //Lambda(); L1234(); R(); Sm(); M(); Flux();
+  XiStar(); Xi(); AStar(); A();
+  Lambda(); L1234(); R(); Sm(); M();// Flux();
 
   //cout << "Sm" <<_Sm.norm() << endl;
   solver.compute(_M);
   //cout << "compute ok" << endl;
 
-  sol1= solver.solve(_Tvect+_f);
+  sol1= solver.solve(_Tvect+_f+_Sm);
   //cout << "itérations = " << solver.iterations() << endl;
   //cout << "erreur estimée = " << solver.error() << endl;
 

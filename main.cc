@@ -24,8 +24,8 @@ int main() {
   x_max = 0.0025;
   y_min = 0;
   y_max = 0.01;
-  Nx = 25;
-  Ny = 50;
+  Nx = 125;
+  Ny = 250;
   t = 0.;
   tf = 10;
   dt = 5*pow(10,-3);
@@ -53,7 +53,7 @@ int main() {
   cout << "R ok" << endl;
   sys -> M();
   cout << "M ok" << endl;
-  sys -> Flux();
+  sys -> Flux(t);
   cout << "F ok" << endl;
 
 
@@ -82,21 +82,25 @@ int main() {
 
   cout << "Flux" << endl;
   cout << sys->GetFlux();
-
+  int i;
+  i=0;
 
   while(t<tf) //faire condition while sur dt ensuite
 {
 //cout << "t="<<t << endl;
 sys->RhoStar(t);
-sys->Flux();
+sys->Flux(t);
+//cout << sys -> GetFlux() << endl;
 //cout << "Newton" <<endl;
 sys->iteration();
-sys->SaveSolPara("Solution");
+//sys->SaveSolPara("Solution");
+sys->SaveSolPara("sol"+to_string(i)+".vtk");
 cout << t << endl;
 
 //cout << "Rho" <<endl;
 sys->Rho(t);
 t+=dt;
+i+=1;
 
 }
 
