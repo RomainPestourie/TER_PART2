@@ -45,14 +45,15 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   _Cpv = 1000;
   _T0 = 293;
   _TA = 6000;
-  _dt = 0.5 ;
+  _dt = 0.005 ;
   _t = 0;
   _T.setZero();
   _Tvect.setZero();
   _Rho.setZero();
   _Lambda.setZero();
   _L1.resize(_Nl,_Nc); _L2.resize(_Nl,_Nc); _L3.resize(_Nl,_Nc); _L4.resize(_Nl,_Nc);
-  _FS.resize(_Nl); _FN.resize(_Nl); _FO.resize(_Nc); _FE.resize(_Nc);
+  _FS.resize(_Nc); _FN.resize(_Nc); _FO.resize(_Nl); _FE.resize(_Nl);
+  _f.resize(_Nc*_Nl);
   //_P1.resize(_Nc,_Nc); _P2.resize(_Nc,_Nc); _P3.resize(_Nc,_Nc); _P4.resize(_Nc,_Nc);
 
   for (int i=0 ; i<_Nl; i++)
@@ -72,8 +73,41 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
 
 void Matrices::Flux()
 {
-  _FS.setZero(); _FN.setZero(); _FO.setZero(); _FE.setZero();
+  _FS.setZero(); _FN.setZero(); _FO.setZero(); _FE.setZero(); _f.setZero();
+
+  for (int i=0; i<_FS.size(); i++)
+  {
+    _FS(i) = 0;
+    if (_t<=50)
+    {
+      _FN(i) = 10000*_t;
+    }
+    else
+    {
+      _FN(i) = 500000 - 9000 * (_t-50);
+    }
+  }
+
+  for (int i=0 ; i<_FO.size(); i++)
+  {
+    _FO(i) = 0;
+    _FE(i) = 0;
+  }
+
+  for (int j=0; j<_Nc-1; j++)
+  {
+    //cout << i <<endl;
+    _f(j) += _dt / ( _A(1,j)* _hx) * _FS(j);
+    _f(_Nl*_Nc - 1 -j) += _dt / (_A(_Nl-1,j) * _hx) * _FN(_Nl - 1 - j);
+  }
+
+  for (int i=0; i<_Nl-1; i++)
+  {
+    _f(i*_Nc) +=_dt / (_A(i,1)*_hy) * _FO(i);
+    _f((i+1)*_Nc -1) += _dt / (_A(i,_Nc-1)*_hy) * _FE(i);
+  }
 }
+
 
 void Matrices::Rho(double t)
 {
@@ -94,7 +128,7 @@ void Matrices::Rho(double t)
 
 void Matrices::RhoStar(double t)
 {
- double C;
+  double C;
   for (int i=0; i<_Nl; i++)
   {
     for (int j=0; j<_Nc ; j++)
@@ -208,24 +242,24 @@ void Matrices::M()
     for (int j=0 ; j<_Nc;j++)
     {
       triplets.push_back({i*_Nc+j,i*_Nc+j,_R(i,j)-(_L1(i,j)+_L2(i,j)+_L3(i,j)+_L4(i,j))});
-    if(j<_Nl-1)
+      if(j+_Nc*i<_Nl*_Nc-1)
       {
         triplets.push_back({i*_Nc+j,i*_Nc+j+1,_L2(i,j)});
       }
-    if(i<_Nl-1)
+      if(i<_Nl-1)
       {
         triplets.push_back({i*_Nc+j,(i+1)*_Nc+j,_L4(i,j)});
       }
-     if (j>0)
+      if (j+_Nc*i>0)
       {
         triplets.push_back({i*_Nc+j,i*_Nc+j-1,_L1(i,j)});
       }
-     if (i>0)
+      if (i>0)
       {
         triplets.push_back({i*_Nc+j,i*_Nc+j-_Nc,_L3(i,j)});
       }
     }
-}
+  }
   _M.setFromTriplets(triplets.begin(),triplets.end());
 }
 
@@ -253,19 +287,19 @@ void Matrices::iteration()
   BiCGSTAB <SparseMatrix<double>> solver;
 
   //cout<< "Mise à jour données" << endl;
- //XiStar(); Xi(); AStar(); A();
- //Lambda(); L1234(); R(); Sm(); M(); Flux();
+  //XiStar(); Xi(); AStar(); A();
+  //Lambda(); L1234(); R(); Sm(); M(); Flux();
 
-//cout << "Sm" <<_Sm.norm() << endl;
-solver.compute(_M);
-//cout << "compute ok" << endl;
+  //cout << "Sm" <<_Sm.norm() << endl;
+  solver.compute(_M);
+  //cout << "compute ok" << endl;
 
-  sol1= solver.solve(_Tvect);
+  sol1= solver.solve(_Tvect+_f);
   //cout << "itérations = " << solver.iterations() << endl;
   //cout << "erreur estimée = " << solver.error() << endl;
 
 
-_Tvect+=sol1;
+  _Tvect=sol1;
 
 
 

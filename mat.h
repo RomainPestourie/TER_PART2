@@ -62,4 +62,5 @@ Eigen::MatrixXd GetL1() {return _L1;};
 Eigen::MatrixXd GetL2() {return _L2;};
 Eigen::MatrixXd GetL3() {return _L3;};
 Eigen::MatrixXd GetL4() {return _L4;};
+Eigen::MatrixXd GetFlux() {return _f;};
 };

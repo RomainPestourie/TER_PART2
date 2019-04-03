@@ -24,11 +24,11 @@ int main() {
   x_max = 0.0025;
   y_min = 0;
   y_max = 0.01;
-  Nx = 5;
-  Ny = 6;
+  Nx = 25;
+  Ny = 50;
   t = 0.;
   tf = 10;
-  dt = 5*pow(10,-2);
+  dt = 5*pow(10,-3);
 
   n= (tf-t)/dt;
 
@@ -37,55 +37,65 @@ int main() {
   cout << 1 << endl;
   sys = new Matrices(x_min,x_max,y_min,y_max,Nx,Ny);
   cout << "1" << endl;
-  //sys -> Rho(0);
+  sys -> Rho(0);
   cout << "Rho ok" << endl;
   sys -> Xi();
   cout << "Xi ok" << endl;
-  //sys -> Lambda();
+  sys -> Lambda();
   cout << "Lambda ok" << endl;
-  //sys -> A();
+  sys -> A();
   cout << "A ok" << endl;
+  sys -> AStar();
+  cout << "Astar ok" << endl;
   sys -> L1234();
   cout << "L1234 ok" << endl;
   sys -> R();
   cout << "R ok" << endl;
   sys -> M();
   cout << "M ok" << endl;
+  sys -> Flux();
+  cout << "F ok" << endl;
 
-  cout << "Rho" << endl;
-  cout << sys->GetRho()<<endl;
-  cout << "Xi" << endl;
-  cout << sys->GetXi() << endl;
-  cout << "Lambda" << endl;
-  cout << sys->GetLambda() << endl;
-  cout << "A" << endl;
-  cout << sys->GetA() << endl;
-  cout << "L1" << endl;
-  cout << sys->GetL1() << endl;
-  cout << "L2" << endl;
-  cout << sys->GetL2() << endl;
-  cout << "L3" << endl;
-  cout << sys->GetL3() << endl;
-  cout << "L4" << endl;
-  cout << sys->GetL4() << endl;
 
-  cout << "R" << endl;
-  cout << sys->GetR() << endl;
+  // cout << "Rho" << endl;
+  // cout << sys->GetRho()<<endl;
+  // cout << "Xi" << endl;
+  // cout << sys->GetXi() << endl;
+  // cout << "Lambda" << endl;
+  // cout << sys->GetLambda() << endl;
+  // cout << "A" << endl;
+  // cout << sys->GetA() << endl;
+  // cout << "L1" << endl;
+  // cout << sys->GetL1() << endl;
+  // cout << "L2" << endl;
+  // cout << sys->GetL2() << endl;
+  //cout << "L3" << endl;
+  //cout << sys->GetL3() << endl;
+  //cout << "L4" << endl;
+  //cout << sys->GetL4() << endl;
 
-  cout << "M" <<endl;
-  cout << sys->GetM() << endl;
+  //cout << "R" << endl;
+  //cout << sys->GetR() << endl;
+
+  //cout << "M" <<endl;
+//  cout << sys->GetM() << endl;
+
+  cout << "Flux" << endl;
+  cout << sys->GetFlux();
 
 
   while(t<tf) //faire condition while sur dt ensuite
 {
 //cout << "t="<<t << endl;
-//sys->RhoStar(t);
+sys->RhoStar(t);
+sys->Flux();
 //cout << "Newton" <<endl;
 sys->iteration();
 sys->SaveSolPara("Solution");
+cout << t << endl;
 
 //cout << "Rho" <<endl;
-//sys->Rho(t);
+sys->Rho(t);
 t+=dt;
 
 }
