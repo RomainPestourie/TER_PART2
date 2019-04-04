@@ -17,18 +17,21 @@ using namespace std;
 
 int main() {
   // Message
-  double x_min, x_max, y_min, y_max, t , tf , dt, test;
+  double x_min, x_max, y_min, y_max, t , tf , dt, test,hy,hx;
   int Nx,Ny,n;
   test = 10;
-  x_min = -0.0025;
-  x_max = 0.0025;
-  y_min = -0.005;
-  y_max = 0.005;
-  Nx = 125;
-  Ny = 250;
+  x_min = -0.005;
+  x_max = 0.005;
+  y_min = -0.0025;
+  y_max = 0.0025;
+  Nx = 250;
+  Ny = 125;
   t = 0.;
   tf = 100;
   dt = 1*pow(10,-1);
+
+  hy = (y_max - y_min) / Ny;
+  hx = (x_max - x_min) / Nx;
 
   n= (tf-t)/dt;
 
@@ -72,7 +75,8 @@ int main() {
   //cout << "L3" << endl;
   //cout << sys->GetL3() << endl;
   //cout << "L4" << endl;
-  //cout << sys->GetL4() << endl;
+  //cout << sys->GetL4() << endl;  _hy = (_y_max - _y_min) / _Nc;
+
 
   //cout << "R" << endl;
   //cout << sys->GetR() << endl;
@@ -85,6 +89,9 @@ int main() {
   int i;
   i=0;
 
+  ofstream sol;
+  sol.open("solution.dat",ios::out);
+
   while(t<tf) //faire condition while sur dt ensuite
 {
 //cout << "t="<<t << endl;
@@ -94,7 +101,7 @@ sys->Flux(t);
 //cout << "Newton" <<endl;
 sys->iteration();
 //sys->SaveSolPara("Solution");
-sys->SaveSolPara("sol"+to_string(i)+".vtk");
+sol  << t << " " << sys->GetTvec().coeffRef(249 * Ny+75) << " " << 249 * hx << " " << 75 * hy << " " << sys->GetRho().coeffRef(0,75) << endl;
 cout << t << endl;
 
 //cout << "Rho" <<endl;
@@ -103,6 +110,7 @@ t+=dt;
 i+=1;
 
 }
+sol.close();
 
 
   return 0;

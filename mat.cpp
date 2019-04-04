@@ -305,6 +305,11 @@ void Matrices::iteration()
 
 }
 
+void Matrices::SaveSol(ofstream sol, int i, int j, double t)
+{
+      sol  << t << " " << _Tvect(i * _Nc+j) << " " << i * _hx << " " << j * _hy << " " << _Rho(i,j) << endl;
+}
+
 void Matrices::SaveSolPara(string nf)
 {
   ofstream solution;
