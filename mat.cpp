@@ -45,7 +45,7 @@ _Nl(Nx),_Nc(Ny),_x_min(x_min), _x_max(x_max), _y_min(y_min), _y_max(y_max)
   _Cpv = 1000;
   _T0 = 293;
   _TA = 6000;
-  _dt = 0.005 ;
+  _dt = pow(10,-2) ;
   _t = 0;
   _T.setZero();
   _Tvect.setZero();
@@ -294,7 +294,7 @@ void Matrices::iteration()
   solver.compute(_M);
   //cout << "compute ok" << endl;
 
-  sol1= solver.solve(_Tvect+_f+_Sm);
+  sol1= solver.solve(_Tvect+_f-_Sm);
   //cout << "itérations = " << solver.iterations() << endl;
   //cout << "erreur estimée = " << solver.error() << endl;
 

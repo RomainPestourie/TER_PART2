@@ -22,13 +22,13 @@ int main() {
   test = 10;
   x_min = -0.0025;
   x_max = 0.0025;
-  y_min = 0;
-  y_max = 0.01;
+  y_min = -0.005;
+  y_max = 0.005;
   Nx = 125;
   Ny = 250;
   t = 0.;
-  tf = 10;
-  dt = 5*pow(10,-3);
+  tf = 100;
+  dt = 1*pow(10,-1);
 
   n= (tf-t)/dt;
 
